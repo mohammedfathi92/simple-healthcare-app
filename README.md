@@ -23,8 +23,8 @@ A simple **healthcare provider portal** built with Django. Providers sign in, ma
 | `apps/core/` | Shared utilities (e.g. management commands, mixins) |
 | `templates/` | HTML templates (portal layouts, Unfold overrides) |
 | `static/` | CSS, JS, and vendor assets |
-| `tests/` | Root-level tests (e.g. auth, patient creation) |
-| `apps/appointments/tests/` | Appointment schedule validation tests |
+| `tests/` | Root-level tests (auth, patients, appointments) |
+| `tests/appointments/` | Appointment schedule validation tests |
 | `ai_prompts/` | Task and AI prompt documentation used during development |
 | `manage.py` | Django entry point |
 | `.env.sample` | Example environment variables for local setup |
@@ -178,7 +178,7 @@ Run a subset by label, for example:
 ```bash
 python manage.py test tests.accounts.test_auth
 python manage.py test tests.patients.test_patients
-python manage.py test apps.appointments.tests.test_appointments
+python manage.py test tests.appointments.test_appointments
 ```
 
 ---
