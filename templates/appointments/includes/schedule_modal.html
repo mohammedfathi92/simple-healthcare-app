@@ -1,0 +1,88 @@
+{% load i18n %}
+<div class="modal fade" id="scheduleAppointmentModal" tabindex="-1" aria-labelledby="scheduleAppointmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="scheduleAppointmentModalLabel">{% trans "Schedule appointment" %}</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    {% trans "Find an existing patient or create a new one, then continue to the appointment form." %}
+                </p>
+                <form id="schedule-search-form" method="get" action="{% url 'patients:schedule_search' %}">
+                    <div class="row g-2 mb-2"
+                         hx-get="{% url 'patients:schedule_search' %}"
+                         hx-trigger="input delay:400ms"
+                         hx-include="#schedule-search-form"
+                         hx-target="#schedule-search-results"
+                         hx-indicator="#schedule-search-indicator">
+                        <div class="col-md-4">
+                            <label class="form-label small mb-1" for="schedule-modal-name">{% trans "Patient name" %}</label>
+                            <input type="text"
+                                   class="form-control form-control-sm"
+                                   id="schedule-modal-name"
+                                   name="name"
+                                   autocomplete="name">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small mb-1" for="schedule-modal-phone">{% trans "Phone" %}</label>
+                            <input type="text"
+                                   class="form-control form-control-sm"
+                                   id="schedule-modal-phone"
+                                   name="phone"
+                                   autocomplete="tel">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small mb-1" for="schedule-modal-email">{% trans "Email" %}</label>
+                            <input type="email"
+                                   class="form-control form-control-sm"
+                                   id="schedule-modal-email"
+                                   name="email"
+                                   autocomplete="email">
+                        </div>
+                    </div>
+                </form>
+                <div class="schedule-htmx-indicator small text-muted my-2" id="schedule-search-indicator">
+                    {% trans "Searching…" %}
+                </div>
+                <div id="schedule-search-results" class="mt-2"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    const patientCreateBase = "{% url 'patients:create' %}";
+    function buildPatientCreateUrl() {
+        const params = new URLSearchParams();
+        const n = document.getElementById("schedule-modal-name")?.value?.trim() || "";
+        const ph = document.getElementById("schedule-modal-phone")?.value?.trim() || "";
+        const em = document.getElementById("schedule-modal-email")?.value?.trim() || "";
+        if (n) {
+            params.set("name", n);
+        }
+        if (ph) {
+            params.set("phone", ph);
+        }
+        if (em) {
+            params.set("email", em);
+        }
+        const q = params.toString();
+        return q ? patientCreateBase + "?" + q : patientCreateBase;
+    }
+    document.getElementById("scheduleAppointmentModal")?.addEventListener("show.bs.modal", function () {
+        document.getElementById("schedule-search-results").innerHTML = "";
+    });
+    document.getElementById("schedule-search-results")?.addEventListener("click", function (e) {
+        const btn = e.target.closest("#schedule-btn-new-patient");
+        if (btn) {
+            e.preventDefault();
+            window.location.href = buildPatientCreateUrl();
+        }
+    });
+})();
+</script>

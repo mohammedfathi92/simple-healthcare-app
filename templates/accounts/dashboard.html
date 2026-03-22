@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load i18n unfold tz %}
+
+{% block page_title %}{% trans "Dashboard" %}{% endblock %}
+
+{% block content %}
+    <div class="mb-8">
+        <h1 class="text-important mb-2 text-xl font-semibold dark:text-font-important-dark md:text-2xl">
+            {% blocktranslate trimmed with name=provider_display_name %}
+                Welcome, {{ name }}
+            {% endblocktranslate %}
+        </h1>
+        <p class="text-font-subtle-light dark:text-font-subtle-dark text-sm">
+            {% trans "Overview of your patients and schedule." %}
+        </p>
+    </div>
+
+    <div class="mb-8 flex flex-wrap gap-3">
+        {% url "patients:create" as add_patient_url %}
+        {% component "unfold/components/button.html" with href=add_patient_url variant="primary" %}
+            <span class="material-symbols-outlined text-base">person_add</span>
+            {% trans "Add Patient" %}
+        {% endcomponent %}
+        <button type="button"
+                class="border border-base-200 bg-base-100 border-transparent text-important font-medium inline-flex items-center gap-1 relative rounded-default justify-center whitespace-nowrap cursor-pointer px-3 py-2 text-[14px] dark:bg-base-800 hover:bg-base-100/80 dark:hover:bg-base-800/80"
+                data-bs-toggle="modal"
+                data-bs-target="#scheduleAppointmentModal">
+            <span class="material-symbols-outlined text-base">event_available</span>
+            {% trans "Schedule Appointment" %}
+        </button>
+    </div>
+
+    <div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+            <p class="text-font-subtle-light dark:text-font-subtle-dark mb-1 text-xs font-medium uppercase tracking-wide">
+                {% trans "Patients" %}
+            </p>
+            <p class="text-important text-2xl font-semibold tabular-nums dark:text-font-important-dark">
+                {{ patient_count }}
+            </p>
+        </div>
+        <div class="rounded-default border border-base-200 bg-white p-5 shadow-xs dark:border-base-800 dark:bg-base-900">
+            <p class="text-font-subtle-light dark:text-font-subtle-dark mb-1 text-xs font-medium uppercase tracking-wide">
+                {% trans "Today's appointments" %}
+            </p>
+            <p class="text-important text-2xl font-semibold tabular-nums dark:text-font-important-dark">
+                {{ today_appointment_count }}
+            </p>
+        </div>
+    </div>
+
+    <div class="mb-8 grid gap-6 lg:grid-cols-2">
+        <section class="rounded-default border border-base-200 bg-white shadow-xs dark:border-base-800 dark:bg-base-900">
+            <div class="border-b border-base-200 px-4 py-3 dark:border-base-800">
+                <h2 class="text-important text-sm font-semibold dark:text-font-important-dark">
+                    {% trans "Today's appointments" %}
+                </h2>
+                <p class="text-font-subtle-light dark:text-font-subtle-dark mt-0.5 text-xs">
+                    {% trans "Up to 10, by time" %}
+                </p>
+            </div>
+            <div class="overflow-x-auto p-2">
+                {% if today_appointments %}
+                    <table class="w-full min-w-[280px] border-collapse text-left text-sm">
+                        <thead>
+                            <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                                <th class="px-3 py-2 font-medium">{% trans "Time" %}</th>
+                                <th class="px-3 py-2 font-medium">{% trans "Patient" %}</th>
+                                <th class="px-3 py-2 font-medium">{% trans "Status" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appt in today_appointments %}
+                                <tr class="border-b border-base-100 last:border-0 dark:border-base-800/80">
+                                    <td class="text-important px-3 py-2.5 whitespace-nowrap dark:text-font-important-dark">
+                                        {{ appt.scheduled_at|localtime|time:"SHORT" }}
+                                    </td>
+                                    <td class="px-3 py-2.5">{{ appt.patient.name }}</td>
+                                    <td class="px-3 py-2.5">{{ appt.get_status_display }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="text-font-subtle-light dark:text-font-subtle-dark px-3 py-6 text-center text-sm">
+                        {% trans "No appointments scheduled for today." %}
+                    </p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="rounded-default border border-base-200 bg-white shadow-xs dark:border-base-800 dark:bg-base-900">
+            <div class="border-b border-base-200 px-4 py-3 dark:border-base-800">
+                <h2 class="text-important text-sm font-semibold dark:text-font-important-dark">
+                    {% trans "Upcoming appointments" %}
+                </h2>
+                <p class="text-font-subtle-light dark:text-font-subtle-dark mt-0.5 text-xs">
+                    {% trans "Next 10 future visits (after today), earliest first" %}
+                </p>
+            </div>
+            <div class="overflow-x-auto p-2">
+                {% if upcoming_appointments %}
+                    <table class="w-full min-w-[280px] border-collapse text-left text-sm">
+                        <thead>
+                            <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                                <th class="px-3 py-2 font-medium">{% trans "Date" %}</th>
+                                <th class="px-3 py-2 font-medium">{% trans "Time" %}</th>
+                                <th class="px-3 py-2 font-medium">{% trans "Patient" %}</th>
+                                <th class="px-3 py-2 font-medium">{% trans "Status" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appt in upcoming_appointments %}
+                                <tr class="border-b border-base-100 last:border-0 dark:border-base-800/80">
+                                    <td class="px-3 py-2.5 whitespace-nowrap">
+                                        {{ appt.scheduled_at|localtime|date:"M j, Y" }}
+                                    </td>
+                                    <td class="text-important px-3 py-2.5 whitespace-nowrap dark:text-font-important-dark">
+                                        {{ appt.scheduled_at|localtime|time:"SHORT" }}
+                                    </td>
+                                    <td class="px-3 py-2.5">{{ appt.patient.name }}</td>
+                                    <td class="px-3 py-2.5">{{ appt.get_status_display }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="text-font-subtle-light dark:text-font-subtle-dark px-3 py-6 text-center text-sm">
+                        {% trans "No upcoming appointments after today." %}
+                    </p>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+{% endblock %}
+
+{% block schedule_modal %}
+    {% include "appointments/includes/schedule_modal.html" %}
+{% endblock %}

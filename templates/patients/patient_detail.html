@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load i18n unfold tz %}
+
+{% block page_title %}{{ patient.name }}{% endblock %}
+
+{% block content %}
+    <div class="mb-6">
+        <a href="{% url 'patients:list' %}"
+           class="text-primary-600 dark:text-primary-500 mb-3 inline-flex items-center gap-1 text-sm font-medium hover:underline">
+            <span class="material-symbols-outlined text-base">arrow_back</span>
+            {% trans "Back to patients" %}
+        </a>
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <h1 class="text-important mb-2 text-xl font-semibold dark:text-font-important-dark md:text-2xl">
+                    {{ patient.name }}
+                </h1>
+                <p class="text-font-subtle-light dark:text-font-subtle-dark text-sm">
+                    {% trans "Patient record and recent appointments." %}
+                </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                {% url "patients:update" patient.pk as edit_patient_url %}
+                {% component "unfold/components/button.html" with href=edit_patient_url variant="primary" size="sm" %}
+                    <span class="material-symbols-outlined text-base">edit</span>
+                    {% trans "Edit" %}
+                {% endcomponent %}
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-6 rounded-default border border-base-200 bg-white p-6 shadow-xs dark:border-base-800 dark:bg-base-900 md:p-8">
+        <h2 class="text-important mb-4 text-sm font-semibold dark:text-font-important-dark">
+            {% trans "Contact & profile" %}
+        </h2>
+        <dl class="grid gap-4 sm:grid-cols-2">
+            <div>
+                <dt class="text-font-subtle-light dark:text-font-subtle-dark mb-0.5 text-xs font-medium uppercase tracking-wide">
+                    {% trans "Phone" %}
+                </dt>
+                <dd class="text-important text-sm dark:text-font-important-dark">
+                    {{ patient.phone|default:"—" }}
+                </dd>
+            </div>
+            <div>
+                <dt class="text-font-subtle-light dark:text-font-subtle-dark mb-0.5 text-xs font-medium uppercase tracking-wide">
+                    {% trans "Email" %}
+                </dt>
+                <dd class="text-important text-sm dark:text-font-important-dark">
+                    {{ patient.email|default:"—" }}
+                </dd>
+            </div>
+            <div>
+                <dt class="text-font-subtle-light dark:text-font-subtle-dark mb-0.5 text-xs font-medium uppercase tracking-wide">
+                    {% trans "Date of birth" %}
+                </dt>
+                <dd class="text-important text-sm dark:text-font-important-dark">
+                    {% if patient.date_of_birth %}
+                        {{ patient.date_of_birth|date:"M j, Y" }}
+                        {% if patient.age_years is not None %}
+                            <span class="text-font-subtle-light dark:text-font-subtle-dark">
+                                ({{ patient.age_years }} {% trans "yrs" %})
+                            </span>
+                        {% endif %}
+                    {% else %}
+                        —
+                    {% endif %}
+                </dd>
+            </div>
+            <div>
+                <dt class="text-font-subtle-light dark:text-font-subtle-dark mb-0.5 text-xs font-medium uppercase tracking-wide">
+                    {% trans "Record created" %}
+                </dt>
+                <dd class="text-important text-sm dark:text-font-important-dark">
+                    {{ patient.created_at|localtime|date:"M j, Y H:i" }}
+                </dd>
+            </div>
+        </dl>
+    </div>
+
+    <div class="mb-6 rounded-default border border-base-200 bg-white p-6 shadow-xs dark:border-base-800 dark:bg-base-900 md:p-8">
+        <h2 class="text-important mb-4 text-sm font-semibold dark:text-font-important-dark">
+            {% trans "Clinical notes" %}
+        </h2>
+        <div class="space-y-4 text-sm">
+            <div>
+                <p class="text-font-subtle-light dark:text-font-subtle-dark mb-1 text-xs font-medium uppercase tracking-wide">
+                    {% trans "Medical history" %}
+                </p>
+                <p class="text-important whitespace-pre-wrap dark:text-font-important-dark">
+                    {{ patient.medical_history|default:"—" }}
+                </p>
+            </div>
+            <div>
+                <p class="text-font-subtle-light dark:text-font-subtle-dark mb-1 text-xs font-medium uppercase tracking-wide">
+                    {% trans "Allergies" %}
+                </p>
+                <p class="text-important whitespace-pre-wrap dark:text-font-important-dark">
+                    {{ patient.allergies|default:"—" }}
+                </p>
+            </div>
+            <div>
+                <p class="text-font-subtle-light dark:text-font-subtle-dark mb-1 text-xs font-medium uppercase tracking-wide">
+                    {% trans "Notes" %}
+                </p>
+                <p class="text-important whitespace-pre-wrap dark:text-font-important-dark">
+                    {{ patient.notes|default:"—" }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <section class="rounded-default border border-base-200 bg-white shadow-xs dark:border-base-800 dark:bg-base-900">
+        <div class="border-b border-base-200 px-4 py-3 dark:border-base-800">
+            <h2 class="text-important text-sm font-semibold dark:text-font-important-dark">
+                {% trans "Appointments" %}
+            </h2>
+            <p class="text-font-subtle-light dark:text-font-subtle-dark mt-0.5 text-xs">
+                {% trans "Up to 25 most recent, newest first." %}
+            </p>
+        </div>
+        <div class="overflow-x-auto p-2">
+            {% if appointments %}
+                <table class="w-full min-w-[280px] border-collapse text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-base-200 text-font-subtle-light dark:border-base-800 dark:text-font-subtle-dark">
+                            <th class="px-3 py-2 font-medium">{% trans "Date & time" %}</th>
+                            <th class="px-3 py-2 font-medium">{% trans "Duration" %}</th>
+                            <th class="px-3 py-2 font-medium">{% trans "Status" %}</th>
+                            <th class="px-3 py-2 font-medium">{% trans "Reason" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in appointments %}
+                            <tr class="border-b border-base-100 last:border-0 dark:border-base-800/80">
+                                <td class="text-important px-3 py-2.5 whitespace-nowrap dark:text-font-important-dark">
+                                    {{ appt.scheduled_at|localtime|date:"M j, Y" }}
+                                    {{ appt.scheduled_at|localtime|time:"SHORT" }}
+                                </td>
+                                <td class="px-3 py-2.5 whitespace-nowrap">
+                                    {{ appt.duration }} {% trans "min" %}
+                                </td>
+                                <td class="px-3 py-2.5">{{ appt.get_status_display }}</td>
+                                <td class="text-font-subtle-light dark:text-font-subtle-dark max-w-xs truncate px-3 py-2.5">
+                                    {{ appt.reason|default:"—" }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-font-subtle-light dark:text-font-subtle-dark px-3 py-6 text-center text-sm">
+                    {% trans "No appointments on file for this patient." %}
+                </p>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

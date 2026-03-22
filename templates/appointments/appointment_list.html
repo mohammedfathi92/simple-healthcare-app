@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% load i18n static unfold %}
+
+{% block page_title %}{% trans "Appointments" %}{% endblock %}
+
+{% block app_extrahead %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+{% endblock %}
+
+{% block content %}
+    <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+            <h1 class="text-important mb-2 text-xl font-semibold dark:text-font-important-dark md:text-2xl">
+                {% trans "Appointments" %}
+            </h1>
+            <p class="text-font-subtle-light dark:text-font-subtle-dark text-sm">
+                {% trans "Filter by patient or date, then edit or remove records as needed." %}
+            </p>
+        </div>
+        <button type="button"
+                class="border border-base-200 bg-primary-600 border-transparent text-white font-medium inline-flex items-center gap-1 relative rounded-default justify-center whitespace-nowrap cursor-pointer px-3 py-2 text-[14px] hover:bg-primary-600/80"
+                data-bs-toggle="modal"
+                data-bs-target="#scheduleAppointmentModal">
+            <span class="material-symbols-outlined text-base">event_available</span>
+            {% trans "Schedule appointment" %}
+        </button>
+    </div>
+
+    <div class="list-dt-card rounded-default border border-base-200 bg-white p-3 shadow-xs dark:border-base-800 dark:bg-base-900 md:p-4">
+        <div class="list-dt-filters mb-4">
+            <p class="text-font-subtle-light dark:text-font-subtle-dark mb-3 text-xs font-medium uppercase tracking-wide">
+                {% trans "Filters" %}
+            </p>
+            <div class="list-dt-filters-grid">
+                <label class="list-dt-filter-field">
+                    <span>{% trans "Name" %}</span>
+                    <input type="search" id="appt-flt-name" class="list-dt-filter-input" autocomplete="off">
+                </label>
+                <label class="list-dt-filter-field">
+                    <span>{% trans "Phone" %}</span>
+                    <input type="search" id="appt-flt-phone" class="list-dt-filter-input" autocomplete="off">
+                </label>
+                <label class="list-dt-filter-field">
+                    <span>{% trans "Email" %}</span>
+                    <input type="search" id="appt-flt-email" class="list-dt-filter-input" autocomplete="off">
+                </label>
+                <label class="list-dt-filter-field">
+                    <span>{% trans "Scheduled from" %}</span>
+                    <input type="date" id="appt-flt-sch-from" class="list-dt-filter-input list-dt-filter-date">
+                </label>
+                <label class="list-dt-filter-field">
+                    <span>{% trans "Scheduled to" %}</span>
+                    <input type="date" id="appt-flt-sch-to" class="list-dt-filter-input list-dt-filter-date">
+                </label>
+                <!-- <label class="list-dt-filter-field">
+                    <span>{% trans "Created from" %}</span>
+                    <input type="date" id="appt-flt-cr-from" class="list-dt-filter-input list-dt-filter-date">
+                </label>
+                <label class="list-dt-filter-field">
+                    <span>{% trans "Created to" %}</span>
+                    <input type="date" id="appt-flt-cr-to" class="list-dt-filter-input list-dt-filter-date">
+                </label> -->
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table id="appointments-table" class="list-dt-table display nowrap w-full">
+                <thead>
+                    <tr>
+                        <th>{% trans "Patient name" %}</th>
+                        <th>{% trans "Patient phone" %}</th>
+                        <th>{% trans "Patient email" %}</th>
+                        <th>{% trans "Scheduled at" %}</th>
+                        <th>{% trans "Status" %}</th>
+                        <th class="text-end">{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block schedule_modal %}
+    {% include "appointments/includes/schedule_modal.html" %}
+{% endblock %}
+
+{% block app_scripts %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script>
+        (function () {
+            const ajaxUrl = "{{ datatable_url|escapejs }}";
+            const labels = {
+                processing: "{% trans 'Loading…'|escapejs %}",
+                lengthMenu: "{% trans 'Show _MENU_ appointments'|escapejs %}",
+                info: "{% trans 'Showing _START_ to _END_ of _TOTAL_ appointments'|escapejs %}",
+                infoEmpty: "{% trans 'No appointments to show'|escapejs %}",
+                infoFiltered: "{% trans '(filtered from _MAX_ total)'|escapejs %}",
+                zeroRecords: "{% trans 'No matching appointments found'|escapejs %}",
+                emptyTable: "{% trans 'No appointments yet. Schedule one to get started.'|escapejs %}",
+                paginate: {
+                    first: "{% trans 'First'|escapejs %}",
+                    last: "{% trans 'Last'|escapejs %}",
+                    next: "{% trans 'Next'|escapejs %}",
+                    previous: "{% trans 'Previous'|escapejs %}",
+                },
+                edit: "{% trans 'Edit'|escapejs %}",
+                remove: "{% trans 'Remove'|escapejs %}",
+            };
+
+            function filterPayload(d) {
+                d.filter_patient_name = $("#appt-flt-name").val() || "";
+                d.filter_patient_phone = $("#appt-flt-phone").val() || "";
+                d.filter_patient_email = $("#appt-flt-email").val() || "";
+                d.filter_scheduled_from = $("#appt-flt-sch-from").val() || "";
+                d.filter_scheduled_to = $("#appt-flt-sch-to").val() || "";
+                d.filter_created_from = $("#appt-flt-cr-from").val() || "";
+                d.filter_created_to = $("#appt-flt-cr-to").val() || "";
+            }
+
+            let reloadTimer = null;
+            function scheduleReload(table) {
+                clearTimeout(reloadTimer);
+                reloadTimer = setTimeout(function () {
+                    table.ajax.reload();
+                }, 400);
+            }
+
+            const table = $("#appointments-table").DataTable({
+                processing: true,
+                serverSide: true,
+                searching: false,
+                dom: "lrtip",
+                ajax: {
+                    url: ajaxUrl,
+                    data: function (d) {
+                        filterPayload(d);
+                    },
+                },
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                order: [[3, "desc"]],
+                scrollX: true,
+                autoWidth: false,
+                language: {
+                    processing: labels.processing,
+                    lengthMenu: labels.lengthMenu,
+                    info: labels.info,
+                    infoEmpty: labels.infoEmpty,
+                    infoFiltered: labels.infoFiltered,
+                    zeroRecords: labels.zeroRecords,
+                    emptyTable: labels.emptyTable,
+                    paginate: labels.paginate,
+                },
+                columns: [
+                    {data: "patient_name", name: "patient__name"},
+                    {data: "patient_phone", name: "patient__phone"},
+                    {data: "patient_email", name: "patient__email"},
+                    {data: "scheduled_at_display", name: "scheduled_at", searchable: false},
+                    {
+                        data: "status_display",
+                        name: "status",
+                        searchable: false,
+                        render: function (data, _type, row) {
+                            const code = row.status || "";
+                            const label = data || "—";
+                            return (
+                                '<span class="appt-status appt-status--' +
+                                String(code).replace(/[^a-z0-9_-]/gi, "") +
+                                '">' +
+                                label +
+                                "</span>"
+                            );
+                        },
+                    },
+                    {
+                        data: null,
+                        name: "actions",
+                        orderable: false,
+                        searchable: false,
+                        className: "text-end text-nowrap",
+                        render: function (_data, _type, row) {
+                            return (
+                                '<a class="list-dt-action list-dt-action--secondary" href="' +
+                                row.edit_url +
+                                '">' +
+                                labels.edit +
+                                "</a>" +
+                                '<a class="list-dt-action list-dt-action--danger" href="' +
+                                row.delete_url +
+                                '">' +
+                                labels.remove +
+                                "</a>"
+                            );
+                        },
+                    },
+                ],
+            });
+
+            $("#appt-flt-name, #appt-flt-phone, #appt-flt-email").on("input", function () {
+                scheduleReload(table);
+            });
+            $("#appt-flt-sch-from, #appt-flt-sch-to, #appt-flt-cr-from, #appt-flt-cr-to").on(
+                "change",
+                function () {
+                    table.ajax.reload();
+                }
+            );
+        })();
+    </script>
+{% endblock %}

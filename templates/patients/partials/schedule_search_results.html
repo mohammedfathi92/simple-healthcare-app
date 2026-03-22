@@ -1,0 +1,31 @@
+{% load i18n %}
+<div class="schedule-search-inner">
+    {% if not has_any_input %}
+        <p class="text-muted small mb-0">{% trans "Type a name, phone, or email to search your patients." %}</p>
+    {% elif patients %}
+        <p class="small fw-semibold mb-2">{% trans "Matching patients" %}</p>
+        <ul class="list-group list-group-flush border rounded overflow-hidden mb-3">
+            {% for p in patients %}
+                <li class="list-group-item d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 py-3">
+                    <div class="small">
+                        <div class="fw-semibold">{{ p.name }}</div>
+                        <div class="text-muted">{{ p.phone|default:"—" }} · {{ p.email|default:"—" }}</div>
+                    </div>
+                    <a class="btn btn-sm btn-primary text-nowrap"
+                       href="{% url 'appointments:create' %}?patient={{ p.pk }}">
+                        {% trans "This is the patient" %}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+        <p class="small text-muted mb-2">{% trans "None of these? Create a new patient with the details you entered." %}</p>
+        <button type="button" class="btn btn-outline-primary btn-sm" id="schedule-btn-new-patient">
+            {% trans "Create new patient" %}
+        </button>
+    {% else %}
+        <p class="small mb-2">{% trans "No patient matches those details." %}</p>
+        <button type="button" class="btn btn-primary btn-sm" id="schedule-btn-new-patient">
+            {% trans "Create new patient" %}
+        </button>
+    {% endif %}
+</div>

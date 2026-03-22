@@ -1,0 +1,90 @@
+{% extends "unfold/layouts/skeleton.html" %}
+{% load i18n static unfold %}
+
+{% block title %}{% block page_title %}Healthcare{% endblock %} | {{ site_title }}{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {% block app_extrahead %}{% endblock %}
+    {% block extra_portal_head %}{% endblock %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+          crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+{% endblock %}
+
+{% block base %}
+    <div id="page" class="flex min-h-screen flex-col bg-base-50 dark:bg-base-900">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm portal-bs-navbar sticky-top">
+            <div class="container-fluid portal-navbar-inner px-3 px-lg-4">
+                <a class="navbar-brand d-flex align-items-center gap-2 fw-semibold text-body text-decoration-none"
+                   href="{% url 'accounts:dashboard' %}">
+                    {% if site_symbol %}
+                        <span class="material-symbols-outlined text-primary portal-navbar-brand-icon" aria-hidden="true">{{ site_symbol }}</span>
+                    {% endif %}
+                    <span>{{ site_header|default:_("Healthcare") }}</span>
+                </a>
+                <button class="navbar-toggler py-2"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#portalNavCollapse"
+                        aria-controls="portalNavCollapse"
+                        aria-expanded="false"
+                        aria-label="{% trans 'Toggle navigation' %}">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="portalNavCollapse">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 mt-2 mt-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match %}{% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}{% endif %}"
+                               href="{% url 'accounts:dashboard' %}">{% trans "Dashboard" %}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match and request.resolver_match.namespace == 'patients' %}active{% endif %}"
+                               href="{% url 'patients:list' %}">{% trans "Patients" %}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match and request.resolver_match.namespace == 'appointments' %}active{% endif %}"
+                               href="{% url 'appointments:list' %}">{% trans "Appointments" %}</a>
+                        </li>
+                    </ul>
+                    <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-2 ms-lg-3 portal-navbar-user-row">
+                        {% if request.user.is_authenticated %}
+                            <span class="navbar-text small text-secondary mb-0 order-lg-1">
+                                {{ request.user.get_full_name|default:request.user.username }}
+                            </span>
+                            <form method="post"
+                                  action="{% url 'accounts:logout' %}"
+                                  class="d-grid d-lg-inline order-lg-2">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-secondary btn-sm w-100 w-lg-auto">
+                                    {% trans "Log out" %}
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <main class="flex-grow px-4 py-6">
+            <div class="mx-auto w-full max-w-6xl">
+                {% include "unfold/helpers/messages.html" %}
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+        <footer class="mt-auto border-t border-base-200 bg-white px-4 py-4 dark:border-base-800 dark:bg-base-900">
+            <div class="mx-auto w-full max-w-6xl text-center">
+                <p class="text-font-subtle-light dark:text-font-subtle-dark text-xs">
+                    Designed by Mohammed Fathi @ 2026
+                </p>
+            </div>
+        </footer>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+                integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+                crossorigin="anonymous"></script>
+        {% block portal_bootstrap_scripts %}{% endblock %}
+        {% block schedule_modal %}{% endblock %}
+        {% block app_scripts %}{% endblock %}
+    </div>
+{% endblock %}

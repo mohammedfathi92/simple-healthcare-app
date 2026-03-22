@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load i18n static unfold %}
+
+{% block page_title %}{% trans "Patients" %}{% endblock %}
+
+{% block app_extrahead %}
+    {# Default DataTables CSS only — avoids Bootstrap clashing with Unfold (container, reboot, buttons). #}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+{% endblock %}
+
+{% block content %}
+    <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+            <h1 class="text-important mb-2 text-xl font-semibold dark:text-font-important-dark md:text-2xl">
+                {% trans "Patients" %}
+            </h1>
+            <p class="text-font-subtle-light dark:text-font-subtle-dark text-sm">
+                {% trans "Patients linked to your account. Search by name, phone, or email." %}
+            </p>
+        </div>
+        {% url "patients:create" as add_url %}
+        {% component "unfold/components/button.html" with href=add_url variant="primary" %}
+            <span class="material-symbols-outlined text-base">person_add</span>
+            {% trans "Add Patient" %}
+        {% endcomponent %}
+    </div>
+
+    <div class="list-dt-card rounded-default border border-base-200 bg-white p-3 shadow-xs dark:border-base-800 dark:bg-base-900 md:p-4">
+        <div class="overflow-x-auto">
+            <table id="patients-table" class="list-dt-table display nowrap w-full">
+                <thead>
+                    <tr>
+                        <th>{% trans "Name" %}</th>
+                        <th>{% trans "Phone" %}</th>
+                        <th>{% trans "Email" %}</th>
+                        <!-- <th>{% trans "Age" %}</th> -->
+                        <th>{% trans "Upcoming appointment" %}</th>
+                        <th>{% trans "Created" %}</th>
+                        <th class="text-end">{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block app_scripts %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script>
+        (function () {
+            const ajaxUrl = "{{ datatable_url|escapejs }}";
+            const labels = {
+                processing: "{% trans 'Loading…'|escapejs %}",
+                search: "{% trans 'Search'|escapejs %}",
+                lengthMenu: "{% trans 'Show _MENU_ patients'|escapejs %}",
+                info: "{% trans 'Showing _START_ to _END_ of _TOTAL_ patients'|escapejs %}",
+                infoEmpty: "{% trans 'No patients to show'|escapejs %}",
+                infoFiltered: "{% trans '(filtered from _MAX_ total)'|escapejs %}",
+                zeroRecords: "{% trans 'No matching patients found'|escapejs %}",
+                emptyTable: "{% trans 'No patients yet. Add your first patient.'|escapejs %}",
+                paginate: {
+                    first: "{% trans 'First'|escapejs %}",
+                    last: "{% trans 'Last'|escapejs %}",
+                    next: "{% trans 'Next'|escapejs %}",
+                    previous: "{% trans 'Previous'|escapejs %}",
+                },
+                show: "{% trans 'Show'|escapejs %}",
+                edit: "{% trans 'Edit'|escapejs %}",
+                remove: "{% trans 'Remove'|escapejs %}",
+            };
+            $("#patients-table").DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: ajaxUrl,
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                order: [[5, "desc"]],
+                scrollX: true,
+                autoWidth: false,
+                language: {
+                    processing: labels.processing,
+                    search: labels.search,
+                    lengthMenu: labels.lengthMenu,
+                    info: labels.info,
+                    infoEmpty: labels.infoEmpty,
+                    infoFiltered: labels.infoFiltered,
+                    zeroRecords: labels.zeroRecords,
+                    emptyTable: labels.emptyTable,
+                    paginate: labels.paginate,
+                },
+                columns: [
+                    {data: "name", name: "name"},
+                    {data: "phone", name: "phone"},
+                    {data: "email", name: "email"},
+                    // {data: "age_display", name: "date_of_birth", orderable: true, searchable: false},
+                    {data: "next_appointment_display", name: "next_appointment_at", searchable: false},
+                    {data: "created_at_display", name: "created_at", searchable: false},
+                    {
+                        data: null,
+                        name: "actions",
+                        orderable: false,
+                        searchable: false,
+                        className: "text-end text-nowrap",
+                        render: function (_data, _type, row) {
+                            return (
+                                '<a class="list-dt-action list-dt-action--ghost" href="' +
+                                row.detail_url +
+                                '">' +
+                                labels.show +
+                                "</a>" +
+                                '<a class="list-dt-action list-dt-action--secondary" href="' +
+                                row.edit_url +
+                                '">' +
+                                labels.edit +
+                                "</a>" +
+                                '<a class="list-dt-action list-dt-action--danger" href="' +
+                                row.delete_url +
+                                '">' +
+                                labels.remove +
+                                "</a>"
+                            );
+                        },
+                    },
+                ],
+            });
+        })();
+    </script>
+{% endblock %}
