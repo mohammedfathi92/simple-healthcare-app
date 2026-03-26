@@ -83,6 +83,7 @@ class AppointmentForm(forms.ModelForm):
             return cleaned
         errs = get_appointment_schedule_errors(
             self.user,
+            patient,
             scheduled_at,
             int(duration),
             exclude_pk=self.instance.pk if self.instance.pk else None,

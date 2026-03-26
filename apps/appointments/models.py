@@ -12,6 +12,7 @@ MIN_GAP_BETWEEN_APPOINTMENTS = timedelta(minutes=15)
 
 def get_appointment_schedule_errors(
     provider,
+    patient,
     scheduled_at,
     duration_minutes: int,
     *,
@@ -19,15 +20,47 @@ def get_appointment_schedule_errors(
 ) -> dict:
     """
     Return field errors if this slot overlaps another appointment or is within
-    MIN_GAP_BETWEEN_APPOINTMENTS of another (same provider, non-deleted).
+    MIN_GAP_BETWEEN_APPOINTMENTS of another (same provider or patient, non-deleted).
     """
     if scheduled_at is None or duration_minutes is None:
         return {}
-    end = scheduled_at + timedelta(minutes=int(duration_minutes))
-    qs = Appointment.all_objects.filter(provider=provider, deleted_at__isnull=True)
+    duration_td = timedelta(minutes=int(duration_minutes))
+    end = scheduled_at + duration_td
+    window_start = scheduled_at - duration_td - MIN_GAP_BETWEEN_APPOINTMENTS
+    window_end = end + MIN_GAP_BETWEEN_APPOINTMENTS
+    base_qs = Appointment.objects.filter(
+        Q(provider=provider) | Q(patient=patient)
+    )
+    qs = base_qs.filter(
+        scheduled_at__gte=window_start,
+        scheduled_at__lt=window_end,
+    )
     if exclude_pk is not None:
         qs = qs.exclude(pk=exclude_pk)
-    for other in qs:
+        base_qs = base_qs.exclude(pk=exclude_pk)
+
+
+    prev_provider = (
+        base_qs.filter(provider=provider, scheduled_at__lt=scheduled_at)
+        .order_by("-scheduled_at")
+        .first()
+    )
+    prev_patient = (
+        base_qs.filter(patient=patient, scheduled_at__lt=scheduled_at)
+        .order_by("-scheduled_at")
+        .first()
+    )
+    candidates = list(qs)
+    if prev_provider is not None:
+        candidates.append(prev_provider)
+    if prev_patient is not None:
+        candidates.append(prev_patient)
+
+    seen = set()
+    for other in candidates:
+        if other.pk in seen:
+            continue
+        seen.add(other.pk)
         o_start = other.scheduled_at
         o_end = o_start + timedelta(minutes=int(other.duration))
         if scheduled_at < o_end and end > o_start:
@@ -117,7 +150,7 @@ class Appointment(models.Model):
                 fields=["provider", "scheduled_at"],
                 name="appts_provider_scheduled_idx",
             ),
-            models.Index(fields=["patient"], name="appts_patient_idx"),
+            models.Index(fields=["patient", "scheduled_at"], name="appts_patient_sched_idx"),
         ]
 
     def __str__(self) -> str:
@@ -125,9 +158,15 @@ class Appointment(models.Model):
 
     def clean(self):
         super().clean()
-        if self.provider_id and self.scheduled_at is not None and self.duration is not None:
+        if (
+            self.provider_id
+            and self.patient_id
+            and self.scheduled_at is not None
+            and self.duration is not None
+        ):
             errs = get_appointment_schedule_errors(
                 self.provider,
+                self.patient,
                 self.scheduled_at,
                 self.duration,
                 exclude_pk=self.pk,
