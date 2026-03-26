@@ -195,7 +195,7 @@ Here’s what was added and how it maps to your design.
 
 ### Summary
 
-- `**apps.accounts.CustomUser`** — Subclasses `AbstractUser` (so you still get `username`, `email`, `password`, `first_name`, `last_name`, `is_active`, plus Django’s auth fields). Adds `created_at` / `updated_at`. Physical table name: `**users**` via `Meta.db_table`.
+- `**apps.accounts.CustomUser`** — Subclasses `AbstractUser` (so you still get `username`, `email`, `password`, `first_name`, `last_name`, `is_active`, plus Django’s auth fields). Adds `created_at` / `updated_at`. Physical table name: `**users*`* via `Meta.db_table`.
 - `**apps.patients.Patient**` — `provider` → `CustomUser`, all listed fields, `**UniqueConstraint` on `(provider, phone)**`, indexes on `**name**`, `**phone**`, `**email**`.
 - `**apps.appointments.Appointment**` — `provider` and `patient` FKs, `duration` as minutes (`PositiveIntegerField`), `status` via `AppointmentStatus` `TextChoices`, `**UniqueConstraint` on `(provider, scheduled_at)**`, composite index on `**(provider, scheduled_at)**`, index on `**patient**`.
 
@@ -309,14 +309,14 @@ Here’s what changed.
 
 ### `Patient` model (`apps/patients/models.py`)
 
-- `**phone`** and `**email**` stay optional in the schema (`blank=True`) with `**default=""**` so values are consistently strings and `clean()` can treat “empty” as missing after `.strip()`.
+- `**phone`** and `**email`** stay optional in the schema (`blank=True`) with `**default=""**` so values are consistently strings and `clean()` can treat “empty” as missing after `.strip()`.
 - `**verbose_name**` and `**help_text**` spell out that at least one contact method is required.
 - `**clean()**` calls `super().clean()`, then requires **either** a non-empty stripped `phone` **or** a non-empty stripped `email**; otherwise it raises **`ValidationError`** on both fields so errors show next to each input in forms/admin.
 
 ### Migration (`apps/patients/migrations/0001_initial.py`)
 
 - Removed the `**UniqueConstraint`** on `(provider, phone)` from `CreateModel` options.
-- Aligned `**phone**` / `**email**` definitions with the model (`default=""`, `verbose_name`, `help_text`).
+- Aligned `**phone`** / `**email**` definitions with the model (`default=""`, `verbose_name`, `help_text`).
 
 `makemigrations --dry-run` reports **no changes** (model and `0001_initial` stay in sync).
 
@@ -344,7 +344,7 @@ Here’s what was done.
 
 ### `config/settings.py`
 
-- Loads `**.env`** from `BASE_DIR` with `**django-environ**` (`environ.Env.read_env(BASE_DIR / ".env")`).
+- Loads `**.env`** from `BASE_DIR` with `**django-environ`** (`environ.Env.read_env(BASE_DIR / ".env")`).
 - `**SECRET_KEY**`, `**DEBUG**`, and `**ALLOWED_HOSTS**` come from the environment (`ALLOWED_HOSTS` as a comma-separated list, default `127.0.0.1,localhost` if omitted).
 - `**DATABASES["default"]**` uses `**django.db.backends.postgresql**` with:
   - `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`
@@ -413,6 +413,12 @@ from apps.core.decorators import staff_required
 **User**
 
 Install django-unfold and configure it as the admin theme
+
+```python
+staff_required
+```
+
+
 make sure it works well with Django and HTMX, keep the UI clean and modern
 
 ---
@@ -431,19 +437,19 @@ Here’s what was set up.
 
 ### `config/settings.py`
 
-- `**unfold**`, `**unfold.contrib.filters**`, and `**unfold.contrib.forms**` are registered **before** `**django.contrib.admin`** (required for Unfold).
-- `**django_htmx**` is in `INSTALLED_APPS` and `**django_htmx.middleware.HtmxMiddleware**` is at the end of `MIDDLEWARE` so your own views can use `**request.htmx**` and HTMX headers without touching the admin.
+- `**unfold`**, `**unfold.contrib.filters**`, and `**unfold.contrib.forms**` are registered **before** `**django.contrib.admin`** (required for Unfold).
+- `**django_htmx`** is in `INSTALLED_APPS` and `**django_htmx.middleware.HtmxMiddleware**` is at the end of `MIDDLEWARE` so your own views can use `**request.htmx**` and HTMX headers without touching the admin.
 - `**UNFOLD**` configures branding (healthcare-oriented title/header, `**local_hospital**` symbol), **8px** corners, sidebar search + “all applications”, a short **Workspace** nav (Dashboard, Providers, Patients, Appointments), and an **environment** badge (Development / Production).
 
 ### Admin classes
 
-- `**PatientAdmin`** and `**AppointmentAdmin**` subclass `**unfold.admin.ModelAdmin**`.
+- `**PatientAdmin`** and `**AppointmentAdmin`** subclass `**unfold.admin.ModelAdmin**`.
 - `**UserAdmin**` subclasses `**DjangoUserAdmin**` and `**ModelAdmin**`, and uses Unfold’s `**UserChangeForm**`, `**UserCreationForm**`, and `**AdminPasswordChangeForm**` so user screens match the theme.
 
 ### Django + HTMX + Unfold
 
 - The **admin** is fully styled by **Unfold** (it uses its own layout and **Alpine.js** there).
-- **HTMX** applies to **your** URLs/templates via **django-htmx**; it does not load inside the admin by default, so there’s no script clash. For HTMX partials, use normal templates and `request.htmx` as needed; keep using `**{% load static %}`** and the `**htmx.org**` script on those pages only.
+- **HTMX** applies to **your** URLs/templates via **django-htmx**; it does not load inside the admin by default, so there’s no script clash. For HTMX partials, use normal templates and `request.htmx` as needed; keep using `**{% load static %}`** and the `**htmx.org`** script on those pages only.
 
 Restart `**runserver**` and open `**/admin/**` to see the new UI. If anything 404s on first load, run `**python manage.py collectstatic**` when `DEBUG=False` behind a real static server.
 
@@ -505,7 +511,7 @@ Here’s what was added and how it behaves.
 ### Behaviour
 
 - **Dashboard** is protected with `LoginRequiredMixin` (uses `LOGIN_URL` → `/login/`).
-- **Login** uses your `**ProviderLoginForm`**; bad credentials show `**invalid_login**` (and related) as `**non_field_errors**` in a red alert.
+- **Login** uses your `**ProviderLoginForm`**; bad credentials show `**invalid_login`** (and related) as `**non_field_errors**` in a red alert.
 - **Logout** in Django 6’s `LogoutView` is **POST-only**. The navbar **“Log out”** button submits a POST to `/logout/` with CSRF (correct pattern).
 
 URL names: `accounts:login`, `accounts:logout`, `accounts:dashboard`. After a successful login, users go to `**/dashboard/`** per `LOGIN_REDIRECT_URL`.
@@ -586,7 +592,7 @@ Here’s what changed.
 
 - **Patients:** Built with **Faker** — `name`, `phone` (trimmed to 32 chars), `unique.email()`, `date_of_birth` (18–92), `text` for `medical_history`, `sentence` or **NKDA** for `allergies`. Each seeded patient has `**notes="seed_data"`** so reruns only remove prior seed rows (same marker as appointments).
 - **Appointments:** `**scheduled_at`** values are **random between 1 and 120 days ahead**, timezone-aware (`get_current_timezone()`), seconds/microseconds zeroed so `(provider, scheduled_at)` stays unique. Up to 500 tries build **10 distinct** times; if that fails, it falls back to **2-hour slots** and logs a warning.
-- **Appointments:** Random `**duration`** in `{15, 20, 30, 45, 60}`, random `**status**` from `AppointmentStatus`, `**reason**` from `fake.sentence()`.
+- **Appointments:** Random `**duration`** in `{15, 20, 30, 45, 60}`, random `**status`** from `AppointmentStatus`, `**reason**` from `fake.sentence()`.
 - `**fake.seed_instance(random.randint(...))**` so each run differs; `**fake.unique.clear()**` after patients so email uniqueness doesn’t carry over oddly in the same process.
 
 Run again with:
@@ -613,7 +619,7 @@ Here’s what was implemented to align the provider UI with **django-unfold** (s
 
 ### 1. `apps/core/mixins.py` — `UnfoldAdminContextMixin`
 
-Merges `**admin.site.each_context(request)`** into the view context so `**unfold/layouts/skeleton.html**` and `**unauthenticated.html**` get `colors`, `styles`, `scripts`, `site_title`, `theme`, etc.
+Merges `**admin.site.each_context(request)`** into the view context so `**unfold/layouts/skeleton.html`** and `**unauthenticated.html**` get `colors`, `styles`, `scripts`, `site_title`, `theme`, etc.
 
 ### 2. `apps/accounts/views.py`
 
@@ -628,7 +634,7 @@ Merges `**admin.site.each_context(request)`** into the view context so `**unfold
 
 - `**templates/base.html**` — extends `**unfold/layouts/skeleton.html**`, app header with symbol + `**site_header**`, links, and `**{% component "unfold/components/button.html" %}**` for logout; uses `**unfold/helpers/messages.html**` for messages.
 - `**templates/accounts/login.html**` — extends `**unfold/layouts/unauthenticated.html**`, reuses `**unauthenticated_title**`, `**field.html**`, error helpers, and the same submit **button** component as the admin login.
-- `**templates/accounts/dashboard.html`** — extends `**base.html**`, Unfold-style panel + primary button to `**admin:index**`.
+- `**templates/accounts/dashboard.html`** — extends `**base.html`**, Unfold-style panel + primary button to `**admin:index**`.
 
 Bootstrap was removed from these templates; styling comes from Unfold’s static bundle (already on the admin site).
 
@@ -666,10 +672,10 @@ Here’s what was implemented.
 ### `ProviderDashboardView` (`apps/accounts/views.py`)
 
 - `**provider_display_name`** — full name if set, otherwise username.
-- `**patient_count**` — `Patient` rows for `request.user`.
+- `**patient_count`** — `Patient` rows for `request.user`.
 - `**today_appointment_count**` — appointments whose **local calendar date** is today.
 - `**today_appointments`** — same filter, `select_related("patient")`, `order_by("scheduled_at")`, **[:10]**.
-- `**upcoming_appointments`** — `scheduled_at > now()`, `**scheduled_at__date > local_today**` (so nothing also listed as “later today”), `order_by("scheduled_at")`, **[:10]**, with `select_related("patient")`.
+- `**upcoming_appointments`** — `scheduled_at > now()`, `**scheduled_at__date > local_today`** (so nothing also listed as “later today”), `order_by("scheduled_at")`, **[:10]**, with `select_related("patient")`.
 
 That keeps “today” and “upcoming” from duplicating the same visit.
 
@@ -729,7 +735,7 @@ Here’s what was added.
 
 ### `apps/appointments/templatetags/appointment_tags.py`
 
-- Filter `**appointment_status_badge_class`** — maps each stored status to Bootstrap 5.3 `**text-bg-***` classes:
+- Filter `**appointment_status_badge_class`** — maps each stored status to Bootstrap 5.3 `**text-bg-*`** classes:
   - **scheduled** → `text-bg-primary`
   - **completed** → `text-bg-success`
   - **cancelled** → `text-bg-danger`
@@ -738,13 +744,13 @@ Here’s what was added.
 
 ### `templates/base.html`
 
-- `**{% block extrahead %}`** with `**{% block app_extrahead %}**` so child templates can inject CSS without touching Unfold’s skeleton.
+- `**{% block extrahead %}`** with `**{% block app_extrahead %}`** so child templates can inject CSS without touching Unfold’s skeleton.
 
 ### `templates/accounts/dashboard.html`
 
 - `**{% block app_extrahead %}**` loads **Bootstrap 5.3.3 CSS** (CDN) only on the dashboard.
 - `**{% load appointment_tags %}`**
-- Status cells wrap the label in `**<span class="badge {{ appt.status|appointment_status_badge_class }}">**` for both **Today** and **Upcoming** tables.
+- Status cells wrap the label in `**<span class="badge {{ appt.status|appointment_status_badge_class }}">`** for both **Today** and **Upcoming** tables.
 
 Bootstrap’s `.badge` + `.text-bg-*` is the current pattern for colored labels in Bootstrap 5.2+. If you want badges on other pages, reuse the filter and include the same CSS (or move the Bootstrap link to `base.html` so it’s global).
 
@@ -823,20 +829,20 @@ Here’s what was implemented.
 
 ### Form (`apps/patients/forms.py`)
 
-- `**PatientForm**` — `name`, `phone`, `email`, `date_of_birth`, `medical_history`, `notes` (Unfold-style widgets).  
+- `**PatientForm`** — `name`, `phone`, `email`, `date_of_birth`, `medical_history`, `notes` (Unfold-style widgets).  
 - `**name**` required; phone/email follow model `clean()` (at least one). `**allergies**` unchanged (admin only).
 
 ### Views (`apps/patients/views.py`)
 
 - `**PatientListView**` — only `request.user`’s patients; annotates `**next_appointment_at**` (earliest `scheduled_at >= now`); columns supported in the template; pagination 25.
-- `**PatientCreateView**` / `**PatientUpdateView**` — after a valid POST, if **phone** (stripped) matches another patient for the same provider (on update, excluding current pk) and `**confirm_duplicate`** is not in POST, the form is shown again with `**show_duplicate_warning**` and links to **edit** existing rows plus a second form (hidden fields + `confirm_duplicate=1`) to **create/update anyway** with the same phone.
+- `**PatientCreateView**` / `**PatientUpdateView**` — after a valid POST, if **phone** (stripped) matches another patient for the same provider (on update, excluding current pk) and `**confirm_duplicate`** is not in POST, the form is shown again with `**show_duplicate_warning`** and links to **edit** existing rows plus a second form (hidden fields + `confirm_duplicate=1`) to **create/update anyway** with the same phone.
 - `**PatientDeleteView`** — scoped queryset; success message after delete.
 
 ### Templates (`templates/patients/`)
 
-- `**patient_list.html**` — table: name, phone, email, age, upcoming appt (local date/time), created, **Edit** + **Remove** (link to confirm page).
+- `**patient_list.html`** — table: name, phone, email, age, upcoming appt (local date/time), created, **Edit** + **Remove** (link to confirm page).
 - `**patient_form.html`** — create/edit + duplicate-phone panel.
-- `**patient_confirm_delete.html**` — confirm + `confirm()` on submit.
+- `**patient_confirm_delete.html`** — confirm + `confirm()` on submit.
 
 ### Navigation
 
@@ -866,17 +872,17 @@ Here’s what was implemented.
 ### `Patient` (`apps/patients/models.py`)
 
 - `**deleted_at`** — nullable `DateTimeField`, indexed.
-- `**PatientManager**` — default `**objects**` only returns rows with `**deleted_at IS NULL**`.
+- `**PatientManager`** — default `**objects**` only returns rows with `**deleted_at IS NULL**`.
 - `**all_objects**` — full queryset (admin/shell only if you switch to it).
 - `**soft_delete()**` — sets `**deleted_at**` on the patient and `**update`s** all of their appointments that are still active (`deleted_at` null) to the same timestamp (updates `**updated_at`** too).
-- `**delete()**` — calls `**soft_delete()**` (no hard delete through the model API).
+- `**delete()`** — calls `**soft_delete()**` (no hard delete through the model API).
 
 ### `Appointment` (`apps/appointments/models.py`)
 
 - `**deleted_at**` — same pattern.
 - `**AppointmentManager**` / `**all_objects**` — same idea as patients.
 - `**delete()**` — soft-deletes that row only.
-- **Unique constraint** — replaced with a **partial** unique on `**(provider, scheduled_at)`** where `**deleted_at IS NULL**` (`appointments_provider_scheduled_active_uniq`), so a slot can be reused after an appointment is soft-deleted.
+- **Unique constraint** — replaced with a **partial** unique on `**(provider, scheduled_at)`** where `**deleted_at IS NULL`** (`appointments_provider_scheduled_active_uniq`), so a slot can be reused after an appointment is soft-deleted.
 
 ### Migrations
 
@@ -893,7 +899,7 @@ Here’s what was implemented.
 
 ### Already correct
 
-- `**Patient.objects`** / `**Appointment.objects**` in dashboard, patient CRUD, list subquery, and duplicate-phone checks only see **active** rows.
+- `**Patient.objects`** / `**Appointment.objects`** in dashboard, patient CRUD, list subquery, and duplicate-phone checks only see **active** rows.
 
 Apply migrations if you haven’t: `**python manage.py migrate`**.
 
@@ -923,20 +929,20 @@ Here’s what was added.
 - **View:** `PatientDataTableAjaxView` — `GET`, login required, scoped to `request.user` as provider
 - **DataTables protocol:** `draw`, `recordsTotal`, `recordsFiltered`, `data[]`
 - **Pagination:** `start` + `length` (page size capped at **100**)
-- **Search:** single box, applied with **OR** on `**name`**, `**phone**`, `**email**` (`icontains`)
+- **Search:** single box, applied with **OR** on `**name`**, `**phone`**, `**email**` (`icontains`)
 - **Ordering:** columns map to `name`, `phone`, `email`, `date_of_birth`, `next_appointment_at`, `created_at`; **Age** uses DOB so **asc = youngest first**; actions column not sortable
 - **Rows:** include `edit_url` / `delete_url` for Bootstrap action buttons
 
 ### List page
 
-- `**PatientListView`** is now a `**TemplateView**` (no server-rendered table rows).
+- `**PatientListView`** is now a `**TemplateView`** (no server-rendered table rows).
 - `**templates/patients/patient_list.html`:** Unfold-style header + card, **Bootstrap 5** table, **DataTables 1.13.8** + **Bootstrap 5** styling (CDN)
 - **Scripts:** jQuery → Bootstrap bundle → DataTables core → `dataTables.bootstrap5`
 - **Defaults:** 25 rows per page, length menu 10/25/50/100, initial sort **Created** descending
 
 ### Base layout
 
-- `**{% block extrahead %}`** / `**{% block app_extrahead %}**` — extra CSS in `<head>`
+- `**{% block extrahead %}`** / `**{% block app_extrahead %}`** — extra CSS in `<head>`
 - `**{% block app_scripts %}**` — scripts at the bottom of the page (after the footer, still inside `#page`)
 
 ### URL order
@@ -980,14 +986,14 @@ Here’s what was added and wired up.
 
 ### `templates/base.html`
 
-- `**{% static 'css/custom.css' %}**` is included at the **end** of `{% block extrahead %}` (after `app_extrahead`) so it overrides Bootstrap/DataTables on the patients page.
+- `**{% static 'css/custom.css' %}`** is included at the **end** of `{% block extrahead %}` (after `app_extrahead`) so it overrides Bootstrap/DataTables on the patients page.
 
 ### `templates/patients/patient_list.html`
 
 - Removed the old inline `<style>` (rules live in `custom.css`).
 - Dropped `**table-light`** on `<thead>` so the header follows the custom theme.
 
-Run `**python manage.py collectstatic**` in production so `custom.css` is deployed.
+Run `**python manage.py collectstatic`** in production so `custom.css` is deployed.
 
 ---
 
@@ -1014,7 +1020,7 @@ Here’s what changed:
 DataTables **Edit / Remove** no longer use Bootstrap’s `btn btn-outline-*`. They use:
 
 - `**patient-dt-action patient-dt-action--secondary`** for Edit (Unfold-style secondary: base surface + border)
-- `**patient-dt-action patient-dt-action--danger**` for Remove (filled red, aligned with Unfold danger)
+- `**patient-dt-action patient-dt-action--danger`** for Remove (filled red, aligned with Unfold danger)
 
 Spacing between the two is handled in CSS with `+ .patient-dt-action` instead of `me-1`.
 
@@ -1050,14 +1056,14 @@ The **patients list** loaded **Bootstrap 5** (and DataTables’ Bootstrap skin).
 ### Changes
 
 1. `**templates/base.html`**
-  Replaced `container mx-auto max-w-6xl` with `**mx-auto w-full max-w-6xl**` in the header, main, and footer inner wrappers so nothing collides with Bootstrap’s `.container` if it’s ever loaded again.
+  Replaced `container mx-auto max-w-6xl` with `**mx-auto w-full max-w-6xl`** in the header, main, and footer inner wrappers so nothing collides with Bootstrap’s `.container` if it’s ever loaded again.
 2. `**templates/patients/patient_list.html**`
   - Removed **Bootstrap CSS/JS** and `**dataTables.bootstrap5`**.  
-  - Load only `**jquery.dataTables.min.css**` + `**jquery.dataTables.min.js**`.  
+  - Load only `**jquery.dataTables.min.css`** + `**jquery.dataTables.min.js**`.  
   - Swapped Bootstrap table wrappers/classes for `**patient-dt-table display nowrap w-full**` and `**overflow-x-auto**`.  
-  - Matched the **dashboard** hero block: `**mb-8`**, `**mb-2**` on the title, `**md:text-2xl**`, same subtitle pattern.  
+  - Matched the **dashboard** hero block: `**mb-8`**, `**mb-2`** on the title, `**md:text-2xl**`, same subtitle pattern.  
   - **Add patient** label aligned with the dashboard: `**{% trans "Add Patient" %}`**.
-3. `**static/css/custom.css**`
+3. `**static/css/custom.css`**
   - Striping/hover selectors now use `**.patient-dt-table**` instead of `.table-striped` / `.table-hover`.  
   - Themed **default** DataTables pagination (`.paginate_button`, `.current`, `.disabled`).  
   - Left the old `**.pagination` / `.page-link`** rules as a fallback comment for any future Bootstrap integration.
@@ -1108,7 +1114,7 @@ Here’s what was added:
 
 - `**.patient-dt-action--ghost`** for the Show control so it stays distinct from Edit/Remove.
 
-Open a patient at `**/patients/<id>/**` or use **Show** in the list.
+Open a patient at `**/patients/<id>/`** or use **Show** in the list.
 
 ---
 
@@ -1145,7 +1151,7 @@ Here’s what was renamed:
 ### Files updated
 
 - `**static/css/custom.css`** — all selectors and the block comment (now notes these classes are for any portal list DataTable).
-- `**templates/patients/patient_list.html**` — wrapper, table, and action links in the DataTables `render` function.
+- `**templates/patients/patient_list.html`** — wrapper, table, and action links in the DataTables `render` function.
 - `**ai_prompts/9_customization_css_in_patients_list.md**` — references updated so they match the code.
 
 ### Reuse on other pages
@@ -1212,7 +1218,7 @@ Here’s what was added for **portal appointments CRUD**, aligned with patients 
 
 ### CSS (`static/css/custom.css`)
 
-- `**.list-dt-filters-grid`**, `**.list-dt-filter-field**`, `**.list-dt-filter-input**` — same tokens as the existing list DataTable controls.
+- `**.list-dt-filters-grid`**, `**.list-dt-filter-field`**, `**.list-dt-filter-input**` — same tokens as the existing list DataTable controls.
 
 Open `**/appointments/**` to use the list; create/edit/delete match the patients portal flow.
 
@@ -1236,7 +1242,7 @@ Here’s what was implemented:
 
 - **CSS:** [bootstrap-datepicker 1.10.0](https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/) stylesheet (after DataTables CSS).
 - **JS:** same version’s script loaded **after jQuery, before DataTables**.
-- Replaced the four `**type="date"`** fields with `**type="text"**` + class `**appt-datepicker**`, `autocomplete="off"`, and placeholder `**yyyy-mm-dd**` (translatable).
+- Replaced the four `**type="date"`** fields with `**type="text"`** + class `**appt-datepicker**`, `autocomplete="off"`, and placeholder `**yyyy-mm-dd**` (translatable).
 - Initialized with:
   - `**format: "yyyy-mm-dd"**` (unchanged API params)
   - `**autoclose**`, `**todayHighlight**`, `**clearBtn**`, `**orientation: "bottom auto"**`
@@ -1244,10 +1250,10 @@ Here’s what was implemented:
 
 ### `static/css/custom.css`
 
-- `**z-index: 2000`** on `**body .datepicker.datepicker-dropdown**` so the calendar opens above the grid and DataTables.
+- `**z-index: 2000`** on `**body .datepicker.datepicker-dropdown`** so the calendar opens above the grid and DataTables.
 - **Dark mode** tweaks for the dropdown (background, borders, day hover, active day) so it’s usable with Unfold’s dark theme.
 
-Values sent to the server stay `**YYYY-MM-DD`**, so `**AppointmentDataTableAjaxView**` does not need changes. If you later need localized month names in the picker, we can add the matching `**bootstrap-datepicker.<lang>.min.js**` locale file and set `**language**` in the initializer.
+Values sent to the server stay `**YYYY-MM-DD`**, so `**AppointmentDataTableAjaxView`** does not need changes. If you later need localized month names in the picker, we can add the matching `**bootstrap-datepicker.<lang>.min.js**` locale file and set `**language**` in the initializer.
 
 ---
 
@@ -1285,12 +1291,12 @@ The template now uses `{% static '...' %}` for those files.
 ### 3. **Initialization**
 
 - Wrapped everything in `**jQuery(function ($) { ... })`** so the DOM is ready.
-- Set `**container: "body"**` so the calendar is appended to `body` and isn’t clipped by card/overflow/stacking.
+- Set `**container: "body"`** so the calendar is appended to `body` and isn’t clipped by card/overflow/stacking.
 - Raised the calendar `**z-index` to `10050**` in `custom.css` so it stays above the header and table.
 
 ### 4. **Fallback**
 
-If `$.fn.datepicker` still isn’t a function, the four fields switch to `**type="date"`** and still trigger a reload on `**change**`, so filters keep working.
+If `$.fn.datepicker` still isn’t a function, the four fields switch to `**type="date"`** and still trigger a reload on `**change`**, so filters keep working.
 
 ---
 
@@ -1317,7 +1323,7 @@ Here’s what was added:
 ### Backend (`apps/appointments/views.py`)
 
 - `**status_display`** — `get_status_display()` (localized label when your choices use translations).
-- `**status**` — raw value (`scheduled`, `completed`, `cancelled`, `no_show`) for CSS classes.
+- `**status`** — raw value (`scheduled`, `completed`, `cancelled`, `no_show`) for CSS classes.
 - **Sorting** — column index **4** maps to the `status` field (click the Status header to sort).
 
 ### Template (`templates/appointments/appointment_list.html`)
@@ -1427,7 +1433,7 @@ Here’s what was implemented:
 
 - `get_initial()`: `?patient=<pk>` pre-selects patient when the pk belongs to the current provider.
 
-### 8. `**PatientCreateView**`
+### 8. `**PatientCreateView`**
 
 - `get_initial()` from `?name=`, `?phone=`, `?email=`.
 - `get_success_url()`: if `save_and_schedule` in POST → redirect to `appointments:create?patient=<new_pk>`.
@@ -1516,7 +1522,7 @@ Identifying a class-name collision: Unfold's Tailwind includes `@layer utilities
 
 Here’s what was going wrong:
 
-**Cause:** Unfold’s stylesheet includes Tailwind’s utility `**.collapse { visibility: collapse }`** (inside `@layer utilities`). Bootstrap’s navbar uses that same `**collapse**` class on the element with `**navbar-collapse**`. On large screens Bootstrap correctly sets `**display: flex !important**`, but Tailwind’s `**visibility: collapse**` still applies. For non-table elements that behaves like **hidden**, so the whole menu area (links, name, logout) was **invisible** even though the bar layout was there.
+**Cause:** Unfold’s stylesheet includes Tailwind’s utility `**.collapse { visibility: collapse }`** (inside `@layer utilities`). Bootstrap’s navbar uses that same `**collapse`** class on the element with `**navbar-collapse**`. On large screens Bootstrap correctly sets `**display: flex !important**`, but Tailwind’s `**visibility: collapse**` still applies. For non-table elements that behaves like **hidden**, so the whole menu area (links, name, logout) was **invisible** even though the bar layout was there.
 
 **Fix:** In `custom.css`, force the portal navbar’s collapse panel to be visible:
 
@@ -1567,7 +1573,7 @@ Here’s what was implemented.
 
 - `**apps/appointments/models.py`** – `MIN_GAP_BETWEEN_APPOINTMENTS`, `get_appointment_schedule_errors()`, `Appointment.clean()`, and `Appointment.save()` calling `full_clean()` so admin and normal saves both validate. Soft-delete still uses `save(update_fields=["deleted_at", "updated_at"])` and **skips** `full_clean()` so it can’t fail on old data.
 - `**apps/appointments/forms.py`** – `clean()` uses the same helper (clear errors on `scheduled_at`).
-- `**apps/core/management/commands/seed_data.py**` – Seeds appointments in a single chain: each starts **duration + 15 minutes** after the previous one so `seed_data` still works.
+- `**apps/core/management/commands/seed_data.py`** – Seeds appointments in a single chain: each starts **duration + 15 minutes** after the previous one so `seed_data` still works.
 
 Validation messages:
 
@@ -1607,7 +1613,7 @@ Empty package file so Django discovers tests under `apps.accounts.tests`.
 ### `apps/accounts/tests/test_auth.py`
 
 - `**setUp()`** – Creates a `CustomUser` with username `provider_test` and password `correct-pass-123`, and sets `self.login_url` via `reverse("accounts:login")`.
-- `**test_provider_can_log_in_with_correct_credentials**` – `POST`s to the login URL, expects a redirect to `reverse("accounts:dashboard")`, checks `_auth_user_id` in the session, then loads the dashboard and asserts the user is authenticated and matches `self.user`.
+- `**test_provider_can_log_in_with_correct_credentials`** – `POST`s to the login URL, expects a redirect to `reverse("accounts:dashboard")`, checks `_auth_user_id` in the session, then loads the dashboard and asserts the user is authenticated and matches `self.user`.
 - `**test_login_fails_with_wrong_password**` – `POST`s a bad password, expects 200, no session auth, anonymous user in context, and the usual `AuthenticationForm` non-field error.
 
 Run them with:
@@ -1678,7 +1684,7 @@ Marks `tests.patients` as a package.
 ### `tests/patients/test_patients.py`
 
 - `**setUp()`** – Creates user `provider_patients`, logs in with `self.client.login()`, sets `self.add_url` to `reverse("patients:create")`.
-- `**test_logged_in_provider_can_create_patient**` – Asserts there are no patients for that provider, `POST`s valid `PatientForm` data (name + email only so the duplicate-phone branch isn’t hit), expects redirect to `reverse("patients:list")`, then checks:
+- `**test_logged_in_provider_can_create_patient`** – Asserts there are no patients for that provider, `POST`s valid `PatientForm` data (name + email only so the duplicate-phone branch isn’t hit), expects redirect to `reverse("patients:list")`, then checks:
   - exactly one patient for that provider in the DB,
   - `patient.provider_id == self.provider.pk`,
   - saved name/email match.
@@ -1721,7 +1727,7 @@ Empty package so Django can load tests.
 
 - **Module docstring** – Notes that schedule rules are enforced through `Appointment.full_clean()` → `clean()` → `get_appointment_schedule_errors`.
 - `**setUp()`** – Creates `provider_appts` and a `Patient` tied to that provider; defines `self.slot_start` (timezone-aware, stable).
-- `**test_valid_appointment_passes_full_clean_and_saves**` – Builds an `Appointment`, calls `full_clean()` then `save()`, asserts it exists for that provider/patient.
+- `**test_valid_appointment_passes_full_clean_and_saves`** – Builds an `Appointment`, calls `full_clean()` then `save()`, asserts it exists for that provider/patient.
 - `**test_cannot_create_two_appointments_at_same_scheduled_start**` – Saves a first booking, builds a second with the **same `scheduled_at`**, expects `ValidationError` from `full_clean()` and an error on `scheduled_at`. Docstring states this is the **duplicate start time** (same instant), not “only one visit per calendar day.”
 - `**test_cannot_create_appointment_with_less_than_fifteen_minute_gap_after_prior`** – First visit 30 minutes starting at `slot_start`; second starts at `slot_start + 40m` (only **10 minutes** after the first ends); `full_clean()` must raise `ValidationError` on `scheduled_at`.
 
@@ -1781,7 +1787,7 @@ Here’s what was added in `**README.md`** at the project root:
 
 1. **Intro** — Short overview: simple healthcare app, provider login, patients, appointments, dashboard, Unfold admin, DataTables, HTMX for dynamic portal pieces (e.g. schedule modal search).
 2. **Project structure** — Table for `config/`, `apps/*`, `templates/`, `static/`, `tests/`, `apps/appointments/tests/`, `ai_prompts/`, `manage.py`, `.env.sample` (no `requirements/` folder, since the repo doesn’t have one; install steps use `pip`).
-3. **Database structure** — Tables `**users`** (providers), `**patients**`, `**appointments**` with main columns and short notes on soft delete, constraints, and 15-minute spacing.
+3. **Database structure** — Tables `**users`** (providers), `**patients`**, `**appointments**` with main columns and short notes on soft delete, constraints, and 15-minute spacing.
 4. **AI prompts folder** — States that prompts live under `**/ai_prompts`** and that this is part of the required workflow.
 5. **Requirements** — Python **3.12+**, **pip 24+**, **PostgreSQL 14+**, plus a note on typical packages.
 6. **Installation** — venv, `pip install …`, **copy `.env.sample` to `.env`**, `migrate`, optional `createsuperuser` / `seed_data`.

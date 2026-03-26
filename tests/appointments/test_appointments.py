@@ -26,10 +26,19 @@ class AppointmentScheduleValidationTests(TestCase):
             username="provider_appts",
             password="unused-for-model-tests",
         )
+        self.other_provider = User.objects.create_user(
+            username="provider_appts_2",
+            password="unused-for-model-tests",
+        )
         self.patient = Patient.objects.create(
             provider=self.provider,
             name="Test Patient",
             email="appt.patient@example.com",
+        )
+        self.other_patient = Patient.objects.create(
+            provider=self.other_provider,
+            name="Other Test Patient",
+            email="appt.patient.2@example.com",
         )
         # Fixed base time so assertions are deterministic.
         self.slot_start = (timezone.now() + timedelta(days=14)).replace(
@@ -117,3 +126,53 @@ class AppointmentScheduleValidationTests(TestCase):
         with self.assertRaises(ValidationError) as ctx:
             second.full_clean()
         self.assertIn("scheduled_at", ctx.exception.error_dict)
+
+    def test_same_patient_cannot_overlap_with_another_provider(self):
+        """
+        Patient schedule is shared across all providers, so overlapping visits
+        for the same patient must be rejected even with different providers.
+        """
+        first = Appointment(
+            provider=self.provider,
+            patient=self.patient,
+            scheduled_at=self.slot_start,
+            duration=30,
+            status=AppointmentStatus.SCHEDULED,
+        )
+        first.full_clean()
+        first.save()
+
+        overlapping_for_same_patient = Appointment(
+            provider=self.other_provider,
+            patient=self.patient,
+            scheduled_at=self.slot_start + timedelta(minutes=10),
+            duration=20,
+            status=AppointmentStatus.SCHEDULED,
+        )
+        with self.assertRaises(ValidationError) as ctx:
+            overlapping_for_same_patient.full_clean()
+        self.assertIn("scheduled_at", ctx.exception.error_dict)
+
+    def test_different_provider_and_different_patient_can_share_time(self):
+        """
+        Two providers can use the same start time if the patient is different,
+        because there is no provider or patient schedule conflict.
+        """
+        first = Appointment(
+            provider=self.provider,
+            patient=self.patient,
+            scheduled_at=self.slot_start,
+            duration=30,
+            status=AppointmentStatus.SCHEDULED,
+        )
+        first.full_clean()
+        first.save()
+
+        parallel_slot = Appointment(
+            provider=self.other_provider,
+            patient=self.other_patient,
+            scheduled_at=self.slot_start,
+            duration=30,
+            status=AppointmentStatus.SCHEDULED,
+        )
+        parallel_slot.full_clean()
